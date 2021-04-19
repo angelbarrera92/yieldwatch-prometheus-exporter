@@ -16,18 +16,25 @@ cli.add_argument("--port", metavar="server port", type=int,
                  help="Port", default=18765)
 cli.add_argument("--debug", action="store_true")
 
-gBalancce = Gauge("balance", "Current Balance", [
-                  "vault", "token", "priceinusd", "wallet"])
+gBalance = Gauge("balance", "Current Balance (tokens)", [
+    "vault", "token", "wallet"])
+gBalanceUSD = Gauge("balance_usd", "Current Balance in USD", [
+    "vault", "token", "wallet"])
+
 gDeposit = Gauge("deposit", "Current Deposit", [
-                 "vault", "token", "priceinusd", "wallet"])
+                 "vault", "token", "wallet"])
+gDepositUSD = Gauge("deposit_usd", "Current Deposit", [
+                 "vault", "token", "wallet"])
+
 gPendingReward = Gauge("pending_reward", "Current Reward", [
-                       "vault", "token", "priceinusd", "wallet"])
-gHarvested = Gauge("harvested_reward", "Current Reward", [
-                   "vault", "token", "priceinusd", "wallet"])
+                       "vault", "token", "wallet"])
 gPendingRewardUSD = Gauge("pending_reward_usd", "Current Reward", [
-                          "vault", "token", "priceinusd", "wallet"])
+                          "vault", "token", "wallet"])
+
+gHarvested = Gauge("harvested_reward", "Current Reward", [
+                   "vault", "token", "wallet"])
 gHarvestedUSD = Gauge("harvested_reward_usd", "Current Reward", [
-                      "vault", "token", "priceinusd", "wallet"])
+                      "vault", "token", "wallet"])
 
 
 def containsVaultInformation(farm):
@@ -63,17 +70,21 @@ def processVault(farm):
         logger.debug(f"Balance: {vault['currentTokens']}")
         logger.debug(f"Deposit: {vault['depositedTokens']}")
 
-        gBalancce.labels(vault["name"], vault["depositToken"], vault["priceInUSDDepositToken"], wallet).set(
+        gBalance.labels(vault["name"], vault["depositToken"], wallet).set(
             vault["currentTokens"])
-        gDeposit.labels(vault["name"], vault["depositToken"], vault["priceInUSDDepositToken"], wallet).set(
+        gBalanceUSD.labels(vault["name"], vault["depositToken"], wallet).set(
+            vault["currentTokens"] * vault["priceInUSDDepositToken"])
+        gDeposit.labels(vault["name"], vault["depositToken"], wallet).set(
             vault["depositedTokens"])
-        gPendingReward.labels(vault["name"], vault["rewardToken"], vault["priceInUSDRewardToken"], wallet).set(
+        gDepositUSD.labels(vault["name"], vault["depositToken"], wallet).set(
+            vault["depositedTokens"] * vault["priceInUSDDepositToken"])
+        gPendingReward.labels(vault["name"], vault["rewardToken"], wallet).set(
             vault["pendingRewards"])
-        gHarvested.labels(vault["name"], vault["rewardToken"], vault["priceInUSDRewardToken"], wallet).set(
+        gHarvested.labels(vault["name"], vault["rewardToken"], wallet).set(
             vault["harvestedRewards"])
-        gPendingRewardUSD.labels(vault["name"], vault["rewardToken"], vault["priceInUSDRewardToken"], wallet).set(
+        gPendingRewardUSD.labels(vault["name"], vault["rewardToken"], wallet).set(
             vault["pendingRewards"] * vault["priceInUSDRewardToken"])
-        gHarvestedUSD.labels(vault["name"], vault["rewardToken"], vault["priceInUSDRewardToken"], wallet).set(
+        gHarvestedUSD.labels(vault["name"], vault["rewardToken"], wallet).set(
             vault["harvestedRewards"] * vault["priceInUSDRewardToken"])
 
 
