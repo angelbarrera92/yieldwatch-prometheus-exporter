@@ -24,7 +24,7 @@ gBalanceUSD = Gauge("balance_usd", "Current Balance in USD", [
 gDeposit = Gauge("deposit", "Current Deposit", [
                  "vault", "token", "wallet"])
 gDepositUSD = Gauge("deposit_usd", "Current Deposit", [
-                 "vault", "token", "wallet"])
+    "vault", "token", "wallet"])
 
 gPendingReward = Gauge("pending_reward", "Current Reward", [
                        "vault", "token", "wallet"])
@@ -35,6 +35,9 @@ gHarvested = Gauge("harvested_reward", "Current Reward", [
                    "vault", "token", "wallet"])
 gHarvestedUSD = Gauge("harvested_reward_usd", "Current Reward", [
                       "vault", "token", "wallet"])
+apy = Gauge("apy", "annual_percentage_yield", ["vault", "wallet"])
+reward_token_price = Gauge("reward_token_price", "reward_token_price", ["token"])
+deposit_token_price = Gauge("deposit_token_price", "deposit_token_price", ["token"])
 
 
 def containsVaultInformation(farm):
@@ -86,6 +89,9 @@ def processVault(farm):
             vault["pendingRewards"] * vault["priceInUSDRewardToken"])
         gHarvestedUSD.labels(vault["name"], vault["rewardToken"], wallet).set(
             vault["harvestedRewards"] * vault["priceInUSDRewardToken"])
+        apy.labels(vault["name"], wallet).set(vault["apy"])
+        reward_token_price.labels(vault["rewardToken"]).set(vault["priceInUSDRewardToken"])
+        deposit_token_price.labels(vault["depositToken"]).set(vault["priceInUSDDepositToken"])
 
 
 def signal_handler(sig, frame):
