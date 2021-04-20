@@ -4,7 +4,7 @@ import signal
 import sys
 from time import sleep
 
-from prometheus_client import Gauge, start_http_server
+from prometheus_client import Counter, Gauge, start_http_server
 from requests import get
 
 logger = logging.getLogger()
@@ -36,8 +36,11 @@ gHarvested = Gauge("harvested_reward", "Current Reward", [
 gHarvestedUSD = Gauge("harvested_reward_usd", "Current Reward", [
                       "vault", "token", "wallet"])
 apy = Gauge("apy", "annual_percentage_yield", ["vault", "wallet"])
-reward_token_price = Gauge("reward_token_price", "reward_token_price", ["token"])
-deposit_token_price = Gauge("deposit_token_price", "deposit_token_price", ["token"])
+reward_token_price = Gauge(
+    "reward_token_price", "reward_token_price", ["token"])
+deposit_token_price = Gauge("deposit_token_price",
+                            "deposit_token_price", ["token"])
+err = Counter("yieldwatch_errors", "YieldWatch API Errors")
 
 
 def containsVaultInformation(farm):
@@ -63,6 +66,7 @@ def query(wallet):
         logger.warn("Yieldwatch failed")
         logger.warn(
             f"Yieldwatch response {response.status_code}: {response.text}")
+        err.inc()
 
 
 def processVault(farm):
@@ -90,8 +94,10 @@ def processVault(farm):
         gHarvestedUSD.labels(vault["name"], vault["rewardToken"], wallet).set(
             vault["harvestedRewards"] * vault["priceInUSDRewardToken"])
         apy.labels(vault["name"], wallet).set(vault["apy"])
-        reward_token_price.labels(vault["rewardToken"]).set(vault["priceInUSDRewardToken"])
-        deposit_token_price.labels(vault["depositToken"]).set(vault["priceInUSDDepositToken"])
+        reward_token_price.labels(vault["rewardToken"]).set(
+            vault["priceInUSDRewardToken"])
+        deposit_token_price.labels(vault["depositToken"]).set(
+            vault["priceInUSDDepositToken"])
 
 
 def signal_handler(sig, frame):
@@ -99,7 +105,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # CLI Parsing
     args = cli.parse_args()
     wallet = args.wallet
