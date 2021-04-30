@@ -87,12 +87,15 @@ def processVault(farm):
             vault["depositedTokens"] * vault["priceInUSDDepositToken"])
         gPendingReward.labels(vault["name"], vault["rewardToken"], wallet).set(
             vault["pendingRewards"])
-        gHarvested.labels(vault["name"], vault["rewardToken"], wallet).set(
-            vault["harvestedRewards"])
+
+        if "harvestedRewards" in vault:
+            gHarvested.labels(vault["name"], vault["rewardToken"], wallet).set(
+                vault["harvestedRewards"])
+            gHarvestedUSD.labels(vault["name"], vault["rewardToken"], wallet).set(
+                vault["harvestedRewards"] * vault["priceInUSDRewardToken"])
+
         gPendingRewardUSD.labels(vault["name"], vault["rewardToken"], wallet).set(
             vault["pendingRewards"] * vault["priceInUSDRewardToken"])
-        gHarvestedUSD.labels(vault["name"], vault["rewardToken"], wallet).set(
-            vault["harvestedRewards"] * vault["priceInUSDRewardToken"])
         apy.labels(vault["name"], wallet).set(vault["apy"])
         reward_token_price.labels(vault["rewardToken"]).set(
             vault["priceInUSDRewardToken"])
