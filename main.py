@@ -1,3 +1,4 @@
+
 import argparse
 import logging
 import signal
@@ -17,25 +18,25 @@ cli.add_argument("--port", metavar="server port", type=int,
 cli.add_argument("--debug", action="store_true")
 
 gBalance = Gauge("balance", "Current Balance (tokens)", [
-    "vault", "token", "wallet"])
+    "vault", "token", "wallet", "farm"])
 gBalanceUSD = Gauge("balance_usd", "Current Balance in USD", [
-    "vault", "token", "wallet"])
+    "vault", "token", "wallet", "farm"])
 
 gDeposit = Gauge("deposit", "Current Deposit", [
-                 "vault", "token", "wallet"])
+                 "vault", "token", "wallet", "farm"])
 gDepositUSD = Gauge("deposit_usd", "Current Deposit", [
-    "vault", "token", "wallet"])
+    "vault", "token", "wallet", "farm"])
 
 gPendingReward = Gauge("pending_reward", "Current Reward", [
-                       "vault", "token", "wallet"])
+                       "vault", "token", "wallet", "farm"])
 gPendingRewardUSD = Gauge("pending_reward_usd", "Current Reward", [
-                          "vault", "token", "wallet"])
+                          "vault", "token", "wallet", "farm"])
 
 gHarvested = Gauge("harvested_reward", "Current Reward", [
-                   "vault", "token", "wallet"])
+                   "vault", "token", "wallet", "farm"])
 gHarvestedUSD = Gauge("harvested_reward_usd", "Current Reward", [
-                      "vault", "token", "wallet"])
-apy = Gauge("apy", "annual_percentage_yield", ["vault", "wallet"])
+                      "vault", "token", "wallet", "farm"])
+apy = Gauge("apy", "annual_percentage_yield", ["vault", "wallet", "farm"])
 reward_token_price = Gauge(
     "reward_token_price", "reward_token_price", ["token"])
 deposit_token_price = Gauge("deposit_token_price",
@@ -58,10 +59,10 @@ def query(wallet):
         ratelimit = response.headers["x-ratelimit-remaining"]
         logger.debug(f"Remaining ratelimit: {ratelimit}")
         result = response.json()["result"]
-        vaultFarms = [result[farm_name]
+        vaultFarms = [farm_name
                       for farm_name in result if containsVaultInformation(result[farm_name])]
-        for farm in vaultFarms:
-            processVault(farm)
+        for farm_name in vaultFarms:
+            processVault(farm_name, result[farm_name])
     else:
         logger.warn("Yieldwatch failed")
         logger.warn(
@@ -69,34 +70,34 @@ def query(wallet):
         err.inc()
 
 
-def processVault(farm):
-    logger.debug(f"Processing: {farm}")
+def processVault(farm_name, farm):
+    logger.debug(f"Processing: {farm} @ {farm_name}")
     for vault in farm["vaults"]["vaults"]:
         logger.debug(f"Processing: {vault}")
         logger.debug(f"Vault name: {vault['name']}")
         logger.debug(f"Balance: {vault['currentTokens']}")
         logger.debug(f"Deposit: {vault['depositedTokens']}")
 
-        gBalance.labels(vault["name"], vault["depositToken"], wallet).set(
+        gBalance.labels(vault["name"], vault["depositToken"], wallet, farm_name).set(
             vault["currentTokens"])
-        gBalanceUSD.labels(vault["name"], vault["depositToken"], wallet).set(
+        gBalanceUSD.labels(vault["name"], vault["depositToken"], wallet, farm_name).set(
             vault["currentTokens"] * vault["priceInUSDDepositToken"])
-        gDeposit.labels(vault["name"], vault["depositToken"], wallet).set(
+        gDeposit.labels(vault["name"], vault["depositToken"], wallet, farm_name).set(
             vault["depositedTokens"])
-        gDepositUSD.labels(vault["name"], vault["depositToken"], wallet).set(
+        gDepositUSD.labels(vault["name"], vault["depositToken"], wallet, farm_name).set(
             vault["depositedTokens"] * vault["priceInUSDDepositToken"])
-        gPendingReward.labels(vault["name"], vault["rewardToken"], wallet).set(
+        gPendingReward.labels(vault["name"], vault["rewardToken"], wallet, farm_name).set(
             vault["pendingRewards"])
 
         if "harvestedRewards" in vault:
-            gHarvested.labels(vault["name"], vault["rewardToken"], wallet).set(
+            gHarvested.labels(vault["name"], vault["rewardToken"], wallet, farm_name).set(
                 vault["harvestedRewards"])
-            gHarvestedUSD.labels(vault["name"], vault["rewardToken"], wallet).set(
+            gHarvestedUSD.labels(vault["name"], vault["rewardToken"], wallet, farm_name).set(
                 vault["harvestedRewards"] * vault["priceInUSDRewardToken"])
 
-        gPendingRewardUSD.labels(vault["name"], vault["rewardToken"], wallet).set(
+        gPendingRewardUSD.labels(vault["name"], vault["rewardToken"], wallet, farm_name).set(
             vault["pendingRewards"] * vault["priceInUSDRewardToken"])
-        apy.labels(vault["name"], wallet).set(vault["apy"])
+        apy.labels(vault["name"], wallet, farm_name).set(vault["apy"])
         reward_token_price.labels(vault["rewardToken"]).set(
             vault["priceInUSDRewardToken"])
         deposit_token_price.labels(vault["depositToken"]).set(
