@@ -38,9 +38,9 @@ gHarvestedUSD = Gauge("harvested_reward_usd", "Current Reward", [
                       "vault", "token", "wallet", "farm"])
 apy = Gauge("apy", "annual_percentage_yield", ["vault", "wallet", "farm"])
 reward_token_price = Gauge(
-    "reward_token_price", "reward_token_price", ["token"])
+    "reward_token_price", "reward_token_price", ["token", "vault", "farm"])
 deposit_token_price = Gauge("deposit_token_price",
-                            "deposit_token_price", ["token"])
+                            "deposit_token_price", ["token", "vault", "farm"])
 err = Counter("yieldwatch_errors", "YieldWatch API Errors")
 
 
@@ -98,9 +98,9 @@ def processVault(farm_name, farm):
         gPendingRewardUSD.labels(vault["name"], vault["rewardToken"], wallet, farm_name).set(
             vault["pendingRewards"] * vault["priceInUSDRewardToken"])
         apy.labels(vault["name"], wallet, farm_name).set(vault["apy"])
-        reward_token_price.labels(vault["rewardToken"]).set(
+        reward_token_price.labels(vault["rewardToken"], vault["name"], farm_name).set(
             vault["priceInUSDRewardToken"])
-        deposit_token_price.labels(vault["depositToken"]).set(
+        deposit_token_price.labels(vault["depositToken"], vault["name"], farm_name).set(
             vault["priceInUSDDepositToken"])
 
 
